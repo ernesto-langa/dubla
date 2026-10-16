@@ -1,0 +1,13 @@
+# vídeos e traduções: conteúdo dos cursos (direitos de autor) e links das aulas — nunca para o repositório
+videos/
+ao_vivo/
+*.log
+
+# recriados pelo instalar.sh
+.venv/
+modelos/
+
+# Python / sistema
+__pycache__/
+*.pyc
+.DS_Store

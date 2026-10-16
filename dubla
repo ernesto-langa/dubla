@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Dubla — vídeos em inglês ouvidos e legendados em português.
+#   dubla                     abre o painel (arranca-o se não estiver a correr)
+#   dubla "LINK" [opções]     traduz um vídeo no terminal (ver: dubla "LINK" --help)
+#   dubla aovivo [opções]     legendas ao vivo (--voz para ouvir a tradução)
+#   dubla ajuda
+set -e
+DIR="$(dirname "$(readlink -f "$0")")"
+PORTA="${PAINEL_PORTA:-8765}"
+
+case "${1:-painel}" in
+  painel)
+    if ! curl -s -o /dev/null "http://127.0.0.1:$PORTA/"; then
+      (cd "$DIR" && setsid nohup python3 painel.py --sem-browser > "$DIR/painel.log" 2>&1 < /dev/null &)
+      for _ in $(seq 1 20); do curl -s -o /dev/null "http://127.0.0.1:$PORTA/" && break; sleep 0.3; done
+    fi
+    xdg-open "http://localhost:$PORTA" > /dev/null 2>&1 &
+    echo "Dubla: http://localhost:$PORTA"
+    ;;
+  aovivo|ao-vivo)
+    shift
+    exec "$DIR/legendas_ao_vivo.py" "$@"
+    ;;
+  ajuda|-h|--help)
+    sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    exec "$DIR/traduzir.py" "$@"
+    ;;
+esac

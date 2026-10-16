@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dubla</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
+    --accent: #2f6f4f; --accent-ink: #ffffff; --accent-soft: #e4efe8;
+    --warn: #9a5b00; --warn-soft: #fbefdc; --bad: #a3322b; --bad-soft: #f8e3e1;
+    --run: #2b5ea3; --run-soft: #e2ebf7; --shadow: 0 1px 2px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --panel: #1f1f1d; --ink: #ecece8; --muted: #9c9c95; --line: #33332f;
+      --accent: #5fb58a; --accent-ink: #0f1a14; --accent-soft: #1f3329;
+      --warn: #e0a64a; --warn-soft: #3a2c16; --bad: #e57c74; --bad-soft: #3d2120;
+      --run: #7aa7e6; --run-soft: #1d2a3d; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+  h1 small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 28px 0 10px; font-weight: 600; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); }
+  form.new { display: grid; grid-template-columns: 1fr 120px 180px 210px auto; gap: 10px; align-items: end; }
+  @media (max-width: 860px) { form.new { grid-template-columns: 1fr 1fr; } form.new .url { grid-column: 1 / -1; } }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  input, select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+                  border-radius: 8px; padding: 8px 10px; min-width: 0; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+           border-radius: 8px; padding: 7px 12px; cursor: pointer; white-space: nowrap; }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  button.danger { color: var(--bad); }
+  button.danger.armed { background: var(--bad); color: var(--panel); border-color: var(--bad); }
+  button:disabled { opacity: .5; cursor: default; }
+  .msg { font-size: 13px; margin-top: 8px; min-height: 1em; }
+  .msg.err { color: var(--bad); }
+
+  .live { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+  .live .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .live.on .dot { background: #d33; box-shadow: 0 0 0 4px rgba(221,51,51,.18); }
+  .live .txt { font-size: 14px; }
+  .live .txt small { display: block; color: var(--muted); font-size: 12px; }
+
+  .google { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 14px; }
+  .google .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+  .google.ok .dot { background: var(--accent); }
+  .google.captcha .dot, .google.erro .dot { background: var(--warn); }
+  .google .txt { flex: 1; min-width: 220px; font-size: 14px; }
+  .google .txt small { display: block; color: var(--muted); font-size: 12px; }
+  .google .g-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; font-weight: 400; }
+  .list { display: grid; gap: 10px; }
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; align-items: center; }
+  .item .name { font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .meta a { color: inherit; }
+  .badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .b-pronto { background: var(--accent-soft); color: var(--accent); }
+  .b-a_processar { background: var(--run-soft); color: var(--run); }
+  .b-interrompido, .b-por_iniciar { background: var(--warn-soft); color: var(--warn); }
+  .b-erro { background: var(--bad-soft); color: var(--bad); }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .progress { grid-column: 1 / -1; }
+  .bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--run); border-radius: 99px; transition: width .6s; }
+  .progress .meta { margin-top: 4px; display: flex; justify-content: space-between; gap: 12px; }
+  .progress .last { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .error { grid-column: 1 / -1; color: var(--bad); font-size: 13px; }
+  .empty { color: var(--muted); text-align: center; padding: 30px; }
+  @media (max-width: 700px) { .item { grid-template-columns: 1fr; } .actions { justify-content: flex-start; } }
+
+  dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; background: var(--panel); color: var(--ink);
+           width: min(1000px, calc(100vw - 32px)); max-height: calc(100vh - 40px); }
+  dialog::backdrop { background: rgba(0,0,0,.55); }
+  .dlg-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); gap: 10px; }
+  .dlg-head b { font-size: 15px; }
+  .dlg-body { padding: 16px; overflow: auto; max-height: calc(100vh - 120px); }
+  video { width: 100%; max-height: calc(100vh - 200px); object-fit: contain; border-radius: 8px; background: #000; display: block; }
+  video::cue { font-size: 1.15em; background: rgba(0,0,0,.75); }
+  .tracks { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.t { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
+  td.en { color: var(--muted); width: 45%; }
+  pre { margin: 0; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .search { width: 260px; max-width: 50vw; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Dubla<small>Vídeos em inglês, ouvidos e legendados em português</small></h1>
+    <div class="card live" id="live">
+      <span class="dot"></span>
+      <span class="txt"><span id="live-label">Legendas ao vivo desligadas</span>
+        <small>Traduz o som que estiver a tocar no computador</small></span>
+      <select id="live-voz" title="Ler a tradução em voz alta">
+        <option value="">Só legendas</option>
+        <option value="pt-BR-AntonioNeural">+ voz Brasil · António</option>
+        <option value="pt-BR-FranciscaNeural">+ voz Brasil · Francisca</option>
+        <option value="pt-PT-DuarteNeural">+ voz Portugal · Duarte</option>
+        <option value="pt-PT-RaquelNeural">+ voz Portugal · Raquel</option>
+      </select>
+      <button id="live-btn">Ligar</button>
+    </div>
+  </header>
+
+  <section class="card google" id="google">
+    <span class="dot"></span>
+    <span class="txt"><b>Google Tradutor:</b> <span id="g-label">a verificar…</span>
+      <small id="g-help"></small></span>
+    <span class="g-actions">
+      <button id="g-open" hidden>Abrir captcha</button>
+      <button id="g-check">Verificar outra vez</button>
+    </span>
+  </section>
+
+  <section class="card">
+    <form class="new" id="new">
+      <label class="url">Link da aula (Whop, YouTube, …) ou ficheiro local
+        <input name="url" placeholder="https://whop.com/…/lessons/lesn_…" required autocomplete="off"></label>
+      <label>Nome<input name="nome" id="nome" autocomplete="off"></label>
+      <label>Voz
+        <select name="voz">
+          <option value="pt-BR-AntonioNeural">Brasil · António</option>
+          <option value="pt-BR-FranciscaNeural">Brasil · Francisca</option>
+          <option value="pt-PT-DuarteNeural">Portugal · Duarte</option>
+          <option value="pt-PT-RaquelNeural">Portugal · Raquel</option>
+        </select></label>
+      <label>Tradutor
+        <select name="tradutor">
+          <option value="google">Google (offline se falhar)</option>
+          <option value="local">Offline</option>
+        </select></label>
+      <button class="primary" type="submit">Traduzir</button>
+    </form>
+    <div class="msg" id="msg"></div>
+  </section>
+
+  <h2>Aulas</h2>
+  <div class="list" id="list"><div class="card empty">A carregar…</div></div>
+</main>
+
+<dialog id="dlg">
+  <div class="dlg-head"><b id="dlg-title"></b><span id="dlg-tools"></span><button id="dlg-close">Fechar</button></div>
+  <div class="dlg-body" id="dlg-body"></div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = async (path, opts = {}) => {
+  const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts,
+                               body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const ct = r.headers.get("Content-Type") || "";
+  const data = ct.includes("json") ? await r.json() : await r.text();
+  if (!r.ok) throw new Error(data.erro || r.statusText);
+  return data;
+};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const dur = s => { if (!s) return ""; s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+const LABEL = { pronto: "Pronto", a_processar: "A processar", interrompido: "Interrompido", erro: "Erro", por_iniciar: "Por iniciar" };
+const VOZ = { "pt-BR-AntonioNeural": "Brasil · António", "pt-BR-FranciscaNeural": "Brasil · Francisca",
+              "pt-PT-DuarteNeural": "Portugal · Duarte", "pt-PT-RaquelNeural": "Portugal · Raquel" };
+
+let state = { videos: [] };
+let google = { estado: "?" };
+
+async function checkGoogle() {
+  const box = $("#google");
+  $("#g-label").textContent = "a verificar…"; $("#g-check").disabled = true;
+  try { google = await api("/api/google"); } catch (e) { google = { estado: "erro", erro: e.message }; }
+  box.className = "card google " + google.estado;
+  $("#g-check").disabled = false;
+  $("#g-open").hidden = google.estado !== "captcha";
+  if (google.estado === "ok") {
+    $("#g-label").textContent = "a funcionar";
+    $("#g-help").textContent = "As novas traduções usam o Google (melhor qualidade).";
+  } else if (google.estado === "captcha") {
+    $("#g-label").textContent = "bloqueado, pede verificação";
+    $("#g-help").textContent = "Carrega em “Abrir captcha”, resolve-o no Chrome e depois em “Verificar outra vez” " +
+      "(o Chrome pode levar ~30 s a gravar a autorização). Entretanto as aulas usam o tradutor offline.";
+  } else {
+    $("#g-label").textContent = "indisponível";
+    $("#g-help").textContent = (google.erro || "") + " — as aulas usam o tradutor offline.";
+  }
+  render(true);
+}
+$("#g-check").onclick = checkGoogle;
+$("#g-open").onclick = () => window.open(google.url || "https://translate.google.com/m?sl=en&tl=pt&q=hello", "_blank");
+
+function render() {
+  const list = $("#list");
+  if (!state.videos.length) { list.innerHTML = '<div class="card empty">Ainda não há aulas. Cola um link acima.</div>'; return; }
+  // não redesenhar enquanto um botão "apagar" está armado
+  if (list.querySelector(".armed")) return;
+  list.innerHTML = state.videos.map(v => {
+    const busy = v.estado === "a_processar";
+    const btn = (act, txt, cls = "") => `<button data-act="${act}" data-n="${v.nome}" class="${cls}">${txt}</button>`;
+    const acts = [];
+    if (v.estado === "pronto") acts.push(btn("ver", "▶ Ver", "primary"), btn("vlc", "VLC"));
+    if (v.estado === "pronto" || v.estado === "a_processar" && v.progresso >= 80) acts.push(btn("transcricao", "Transcrição"));
+    if (busy) acts.push(btn("parar", "Parar"));
+    if (["interrompido", "erro", "por_iniciar"].includes(v.estado) && v.url) acts.push(btn("retomar", "Retomar", "primary"));
+    if (v.estado === "pronto") acts.push(btn("voz", "Mudar voz"));
+    if (v.estado === "pronto" && v.tradutor_usado === "local")
+      acts.push(`<button data-act="retraduzir" data-n="${v.nome}" ${google.estado === "ok" ? "" :
+        'disabled title="Disponível quando o Google Tradutor estiver a funcionar"'}>Retraduzir com Google</button>`);
+    acts.push(btn("log", "Registo"), btn("pasta", "Pasta"), btn("apagar", "Apagar", "danger"));
+    const info = [v.duracao && dur(v.duracao), v.tamanho_mb && v.tamanho_mb + " MB", v.voz && VOZ[v.voz],
+                  v.url && `<a href="${esc(v.url)}" target="_blank" rel="noopener">origem</a>`].filter(Boolean).join(" · ");
+    return `<div class="card item">
+      <div><div class="name">${esc(v.nome)} <span class="badge b-${v.estado}">${LABEL[v.estado]}</span>
+        ${v.estado === "pronto" && v.tradutor_usado ? `<span class="tag">${v.tradutor_usado === "google" ? "tradução Google" : "tradução offline"}</span>` : ""}</div>
+        <div class="meta">${info}</div></div>
+      <div class="actions">${acts.join("")}</div>
+      ${busy ? `<div class="progress"><div class="bar"><div style="width:${v.progresso}%"></div></div>
+        <div class="meta"><span>${esc(v.etapa)} · ${Math.round(v.progresso)}%</span><span class="last">${esc(v.ultima_linha)}</span></div></div>` : ""}
+      ${v.estado === "interrompido" ? `<div class="meta progress">Parou em: ${esc(v.etapa)}. “Retomar” continua a partir daí.</div>` : ""}
+      ${v.erro ? `<div class="error">${esc(v.erro)}</div>` : ""}
+    </div>`;
+  }).join("");
+}
+
+async function refresh() {
+  try {
+    const d = await api("/api/videos");
+    state = d;
+    $("#nome").placeholder = d.proximo_nome;
+    const live = $("#live");
+    live.classList.toggle("on", d.ao_vivo);
+    $("#live-label").textContent = d.ao_vivo ? "Legendas ao vivo ligadas" : "Legendas ao vivo desligadas";
+    $("#live-btn").textContent = d.ao_vivo ? "Desligar" : "Ligar";
+    $("#live-voz").disabled = d.ao_vivo;
+    render();
+  } catch (e) { $("#list").innerHTML = `<div class="card empty">Sem ligação ao painel (${esc(e.message)}). Está a correr o painel.py?</div>`; }
+}
+
+$("#new").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = new FormData(e.target), msg = $("#msg");
+  msg.className = "msg"; msg.textContent = "A iniciar…";
+  try {
+    const v = await api("/api/videos", { method: "POST", body: Object.fromEntries(f) });
+    msg.textContent = `“${v.nome}” iniciado. O progresso aparece na lista.`;
+    e.target.url.value = ""; e.target.nome.value = "";
+    refresh();
+  } catch (err) { msg.className = "msg err"; msg.textContent = err.message; }
+});
+
+$("#live-btn").addEventListener("click", async () => {
+  $("#live-btn").disabled = true;
+  try { await api("/api/ao-vivo", { method: "POST", body: { ligar: !state.ao_vivo, voz: $("#live-voz").value } }); }
+  finally { $("#live-btn").disabled = false; refresh(); }
+});
+
+// ---------- diálogo
+const dlg = $("#dlg");
+function openDlg(title, html, tools = "") {
+  $("#dlg-title").textContent = title; $("#dlg-tools").innerHTML = tools; $("#dlg-body").innerHTML = html; dlg.showModal();
+}
+$("#dlg-close").onclick = () => dlg.close();
+dlg.addEventListener("close", () => {
+  if (dlg.open) return;  // o evento chega depois: se já reabriu, não mexer no conteúdo novo
+  const v = dlg.querySelector("video"); if (v) { v.pause(); v.removeAttribute("src"); v.load(); }
+});
+
+function player(n) {
+  openDlg(n, `<video controls autoplay preload="metadata" src="/api/videos/${n}/video.mp4">
+      <track kind="subtitles" srclang="pt" label="Português" src="/api/videos/${n}/pt.vtt">
+      <track kind="subtitles" srclang="en" label="English" src="/api/videos/${n}/en.vtt">
+    </video>
+    <div class="tracks">Legendas:
+      <button data-sub="pt">Português</button><button data-sub="en">English</button><button data-sub="">Sem legendas</button>
+      <span>· Áudio em português. Para ouvir o original em inglês usa o VLC.</span></div>`);
+  const v = dlg.querySelector("video");
+  const setSub = lang => [...v.textTracks].forEach(t => t.mode = t.language === lang ? "showing" : "disabled");
+  dlg.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => setSub(b.dataset.sub));
+  v.addEventListener("loadedmetadata", () => setSub(""), { once: true });
+}
+
+async function transcript(n) {
+  const segs = await api(`/api/videos/${n}/transcricao`);
+  const t = s => { s = Math.floor(s); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+  openDlg(`${n} · transcrição`, `<table>${segs.map(s =>
+      `<tr><td class="t">${t(s.start)}</td><td class="en">${esc(s.en)}</td><td>${esc(s.pt)}</td></tr>`).join("")}</table>`,
+    `<input class="search" placeholder="Procurar…" id="q">`);
+  $("#q").oninput = e => { const q = e.target.value.toLowerCase();
+    dlg.querySelectorAll("tr").forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? "" : "none"); };
+}
+
+async function showLog(n) {
+  const txt = await api(`/api/videos/${n}/log`);
+  const clean = txt.split("\n").filter(l => !/^\s*(\[download\]\s+[\d.]+%|\d\d:\d\d:\d\d \/)/.test(l) && l.trim()).slice(-120).join("\n");
+  openDlg(`${n} · registo`, `<pre>${esc(clean || "(vazio)")}</pre>`);
+}
+
+function changeVoice(n) {
+  openDlg(`${n} · mudar voz`, `<p>Refaz só a voz e o MP4 (a transcrição e a tradução mantêm-se). Leva poucos minutos.</p>
+    <p><select id="nv">${Object.entries(VOZ).map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select>
+    <button class="primary" id="nv-go">Refazer voz</button></p>`);
+  $("#nv-go").onclick = async () => { await api(`/api/videos/${n}/refazer-voz`, { method: "POST", body: { voz: $("#nv").value } });
+    dlg.close(); refresh(); };
+}
+
+$("#list").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const n = b.dataset.n, act = b.dataset.act;
+  try {
+    if (act === "ver") return player(n);
+    if (act === "transcricao") return await transcript(n);
+    if (act === "log") return await showLog(n);
+    if (act === "voz") return changeVoice(n);
+    if (act === "apagar") {
+      if (!b.classList.contains("armed")) {
+        b.classList.add("armed"); b.textContent = "Confirmar?";
+        setTimeout(() => { b.classList.remove("armed"); b.textContent = "Apagar"; render(); }, 4000);
+        return;
+      }
+      b.classList.remove("armed");
+      await api(`/api/videos/${n}`, { method: "DELETE" });
+    } else {
+      b.disabled = true;
+      await api(`/api/videos/${n}/${act}`, { method: "POST", body: {} });
+    }
+    refresh();
+  } catch (err) { $("#msg").className = "msg err"; $("#msg").textContent = err.message; b.disabled = false; }
+});
+
+refresh();
+checkGoogle();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
