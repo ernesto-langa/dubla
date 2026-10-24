@@ -166,7 +166,13 @@ def transcribe(video, work, model_name):
         words += [{"w": w.word, "s": w.start, "e": w.end} for w in seg.words]
     print()
 
-    # junta palavras em frases (cortes em . ? ! ou pausas), máx ~12 s por bloco
+    segs = group_sentences(words)
+    cache.write_text(json.dumps(segs, ensure_ascii=False, indent=1))
+    return segs
+
+
+def group_sentences(words):
+    """Junta palavras em frases (cortes em . ? ! ou pausas), máx ~12 s por bloco."""
     segs, cur = [], []
     for i, w in enumerate(words):
         cur.append(w)
@@ -179,7 +185,6 @@ def transcribe(video, work, model_name):
             if text:
                 segs.append({"start": cur[0]["s"], "end": w["e"], "en": text})
             cur = []
-    cache.write_text(json.dumps(segs, ensure_ascii=False, indent=1))
     return segs
 
 
@@ -355,6 +360,16 @@ def load_wav(path, tempo=1.0):
     return data.astype(np.float32) / 32768
 
 
+def fit(segs, i, cursor, n, track_len):
+    """Onde começa a fala i (em amostras) e quanto acelerá-la para caber até à frase seguinte.
+
+    Nunca começa antes do fim da fala anterior (cursor); se não cabe, acelera até 1.5x."""
+    start = max(int(segs[i]["start"] * SR), cursor)
+    nxt = int(segs[i + 1]["start"] * SR) if i + 1 < len(segs) else track_len
+    slot = max(nxt - start, int(0.5 * SR))
+    return start, (min(n / slot, 1.5) if n > slot else 1.0)
+
+
 def synthesize(segs, work, voice, rate, total_dur):
     out = work / "dobragem_pt.wav"
     if out.exists():
@@ -369,11 +384,9 @@ def synthesize(segs, work, voice, rate, total_dur):
     cursor = 0  # fim da última fala colocada (evita sobreposições)
     for i, s in enumerate(segs):
         audio = load_wav(tts_dir / f"{i:05}.mp3")
-        start = max(int(s["start"] * SR), cursor)
-        nxt = int(segs[i + 1]["start"] * SR) if i + 1 < len(segs) else len(track)
-        slot = max(nxt - start, int(0.5 * SR))
-        if len(audio) > slot:  # não cabe: acelera até 1.5x
-            audio = load_wav(tts_dir / f"{i:05}.mp3", tempo=min(len(audio) / slot, 1.5))
+        start, tempo = fit(segs, i, cursor, len(audio), len(track))
+        if tempo > 1:
+            audio = load_wav(tts_dir / f"{i:05}.mp3", tempo=tempo)
         end = min(start + len(audio), len(track))
         track[start:end] += audio[: end - start]
         cursor = end
