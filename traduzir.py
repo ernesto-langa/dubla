@@ -44,9 +44,10 @@ def log(msg):
 
 
 def fmt_ts(t):
-    h, rem = divmod(t, 3600)
-    m, s = divmod(rem, 60)
-    return f"{int(h):02}:{int(m):02}:{int(s):02},{int(round((s % 1) * 1000)) % 1000:03}"
+    s, ms = divmod(round(t * 1000), 1000)
+    h, s = divmod(s, 3600)
+    m, s = divmod(s, 60)
+    return f"{h:02}:{m:02}:{s:02},{ms:03}"
 
 
 def write_srt(path, segs, key):
