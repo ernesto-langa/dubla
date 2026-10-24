@@ -138,6 +138,13 @@ yt-dlp (download) → faster-whisper on CPU (word-timestamped transcription, gro
 Google Translate (with Chrome's cookies) or offline Argos/CTranslate2 model → Edge TTS (neural voice) →
 each sentence is placed at the moment it is spoken and sped up to 1.5x if it does not fit → ffmpeg muxes everything.
 
+## Tests
+
+```bash
+uv pip install --python .venv/bin/python -r requirements-dev.txt   # or .venv/bin/pip install -r …
+.venv/bin/python -m pytest
+```
+
 ## Privacy and use
 
 - Videos, translations and lesson links are stored in `videos/`, which `.gitignore` excludes. They are course

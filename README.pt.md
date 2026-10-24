@@ -135,6 +135,13 @@ yt-dlp (download) → faster-whisper no CPU (transcrição com tempos por palavr
 Google Tradutor (com as cookies do Chrome) ou modelo offline Argos/CTranslate2 → Edge TTS (voz neural) →
 cada frase é colocada no instante em que é dita e acelerada até 1,5x se não couber → ffmpeg junta tudo.
 
+## Testes
+
+```bash
+uv pip install --python .venv/bin/python -r requirements-dev.txt   # ou .venv/bin/pip install -r …
+.venv/bin/python -m pytest
+```
+
 ## Privacidade e uso
 
 - Os vídeos, as traduções e os links das aulas ficam em `videos/`, que o `.gitignore` exclui. São conteúdo dos
